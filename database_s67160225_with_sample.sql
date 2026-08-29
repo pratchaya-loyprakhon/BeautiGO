@@ -1,0 +1,237 @@
+-- BeautiGo CLEAN INSTALL + SAMPLE DATA
+-- WARNING: This file drops BeautiGo tables before recreating them.
+USE `s67160225`;
+SET FOREIGN_KEY_CHECKS=0;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS bookings;
+DROP TABLE IF EXISTS services;
+DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS shops;
+DROP TABLE IF EXISTS users;
+SET FOREIGN_KEY_CHECKS=1;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  role ENUM('customer','owner') NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  email VARCHAR(180) NOT NULL UNIQUE,
+  phone VARCHAR(30),
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE shops (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  owner_id INT NOT NULL UNIQUE,
+  name VARCHAR(180) NOT NULL,
+  category ENUM('คลินิกเสริมความงาม','ร้านทำผมและเสริมสวย','ร้านทำเล็บและขนตา','สปาและร้านนวด') NOT NULL,
+  image VARCHAR(255),
+  capacity INT NOT NULL DEFAULT 1,
+  open_time TIME NOT NULL,
+  close_time TIME NOT NULL,
+  open_days VARCHAR(80) NOT NULL DEFAULT '1,2,3,4,5,6,0',
+  address TEXT NOT NULL,
+  latitude DECIMAL(10,7) NOT NULL,
+  longitude DECIMAL(10,7) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_shop_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE services (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  shop_id INT NOT NULL,
+  name VARCHAR(160) NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  duration_minutes INT NOT NULL DEFAULT 60,
+  description TEXT,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+);
+
+CREATE TABLE bookings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_id INT NOT NULL,
+  shop_id INT NOT NULL,
+  service_id INT NOT NULL,
+  booking_date DATE NOT NULL,
+  booking_time TIME NOT NULL,
+  note TEXT,
+  service_price DECIMAL(10,2) NOT NULL,
+  deposit_amount DECIMAL(10,2) NOT NULL,
+  payment_status ENUM('pending','paid','failed') DEFAULT 'pending',
+  booking_status ENUM('pending','confirmed','completed','cancelled') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+  INDEX idx_slot(shop_id, booking_date, booking_time)
+);
+
+CREATE TABLE reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  booking_id INT NOT NULL UNIQUE,
+  customer_id INT NOT NULL,
+  shop_id INT NOT NULL,
+  rating TINYINT NOT NULL,
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+  FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+);
+
+CREATE TABLE subscriptions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  owner_id INT NOT NULL,
+  package ENUM('monthly','half_year','yearly') NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  payment_method ENUM('bank','truemoney') NOT NULL,
+  payment_status ENUM('pending','paid','failed') DEFAULT 'paid',
+  starts_at DATE NOT NULL,
+  ends_at DATE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+-- BeautiGo sample data for database s67160225
+-- Safe-ish seed: uses high fixed IDs and INSERT IGNORE so existing ordinary rows are not deleted.
+-- Demo password for ALL sample users: 123456
+
+USE `s67160225`;
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS=0;
+
+-- =========================================================
+-- SAMPLE USERS
+-- Password hash below = 123456 (PHP password_hash / bcrypt)
+-- =========================================================
+INSERT IGNORE INTO users (id, role, name, email, phone, password) VALUES
+(1001,'owner','กิตติ เจ้าของ Glow Clinic','owner1@beautigo.test','0810000001','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1002,'owner','มินตรา เจ้าของ Hair House','owner2@beautigo.test','0810000002','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1003,'owner','แพรวา เจ้าของ Nail Story','owner3@beautigo.test','0810000003','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1004,'owner','ณัฐชา เจ้าของ Relax Spa','owner4@beautigo.test','0810000004','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1005,'owner','ธีรภัทร เจ้าของ Aura Clinic','owner5@beautigo.test','0810000005','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1006,'owner','พิมพ์ชนก เจ้าของ Chic Salon','owner6@beautigo.test','0810000006','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1007,'owner','ชลธิชา เจ้าของ Blink Nail','owner7@beautigo.test','0810000007','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1008,'owner','อรอนงค์ เจ้าของ Siam Massage','owner8@beautigo.test','0810000008','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1101,'customer','สมชาย ทดลอง','customer1@beautigo.test','0891000001','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1102,'customer','สุดา ทดลอง','customer2@beautigo.test','0891000002','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1103,'customer','ณัฐวุฒิ ทดลอง','customer3@beautigo.test','0891000003','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1104,'customer','อริสา ทดลอง','customer4@beautigo.test','0891000004','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO'),
+(1105,'customer','ธนพล ทดลอง','customer5@beautigo.test','0891000005','$2y$12$.GJiAkfYC6/q9tuaCA/o1erqxkh4awXrir0GSwXaoWsb9qGUZPQFO');
+
+-- =========================================================
+-- SAMPLE SHOPS
+-- image uses seeded Picsum URLs so every shop gets a different random-looking image.
+-- Coordinates are sample points around Bangsaen / Saen Suk, Chonburi.
+-- =========================================================
+INSERT IGNORE INTO shops
+(id, owner_id, name, category, image, capacity, open_time, close_time, open_days, address, latitude, longitude) VALUES
+(1201,1001,'Glow Up Aesthetic Clinic','คลินิกเสริมความงาม','https://picsum.photos/seed/beautigo-clinic-glow/900/500',3,'10:00:00','20:00:00','1,2,3,4,5,6,0','ถนนลงหาดบางแสน ตำบลแสนสุข อำเภอเมืองชลบุรี จังหวัดชลบุรี',13.2824500,100.9248500),
+(1202,1002,'Mellow Hair House','ร้านทำผมและเสริมสวย','https://picsum.photos/seed/beautigo-hair-mellow/900/500',4,'09:00:00','20:00:00','1,2,3,4,5,6,0','บางแสนสาย 4 ใต้ ตำบลแสนสุข อำเภอเมืองชลบุรี จังหวัดชลบุรี',13.2799000,100.9272000),
+(1203,1003,'Nail Story & Lashes','ร้านทำเล็บและขนตา','https://picsum.photos/seed/beautigo-nail-story/900/500',2,'10:00:00','21:00:00','1,2,3,4,5,6,0','ถนนบางแสนสาย 2 ตำบลแสนสุข อำเภอเมืองชลบุรี จังหวัดชลบุรี',13.2868000,100.9195000),
+(1204,1004,'Blue Calm Spa','สปาและร้านนวด','https://picsum.photos/seed/beautigo-spa-bluecalm/900/500',5,'11:00:00','22:00:00','1,2,3,4,5,6,0','ใกล้หาดบางแสน ตำบลแสนสุข อำเภอเมืองชลบุรี จังหวัดชลบุรี',13.2922000,100.9118000),
+(1205,1005,'Aura Skin Clinic','คลินิกเสริมความงาม','https://picsum.photos/seed/beautigo-clinic-aura/900/500',2,'10:30:00','19:30:00','1,2,3,4,5,6','ถนนสุขุมวิท ตำบลแสนสุข อำเภอเมืองชลบุรี จังหวัดชลบุรี',13.2761000,100.9335000),
+(1206,1006,'Chic Cut Salon','ร้านทำผมและเสริมสวย','https://picsum.photos/seed/beautigo-hair-chic/900/500',3,'09:30:00','20:30:00','1,2,3,4,5,6,0','ซอยซีไซด์ ตำบลแสนสุข อำเภอเมืองชลบุรี จังหวัดชลบุรี',13.2884000,100.9220000),
+(1207,1007,'Blink Beauty Nail','ร้านทำเล็บและขนตา','https://picsum.photos/seed/beautigo-nail-blink/900/500',3,'10:00:00','20:00:00','1,2,3,4,5,6,0','ถนนมิตรสัมพันธ์ ตำบลแสนสุข อำเภอเมืองชลบุรี จังหวัดชลบุรี',13.2736000,100.9291000),
+(1208,1008,'Siam Relax Massage','สปาและร้านนวด','https://picsum.photos/seed/beautigo-spa-siamrelax/900/500',6,'10:00:00','22:00:00','1,2,3,4,5,6,0','ถนนเลียบหาดบางแสน ตำบลแสนสุข อำเภอเมืองชลบุรี จังหวัดชลบุรี',13.2970000,100.9099000);
+
+-- =========================================================
+-- SAMPLE SERVICES
+-- Includes <= 200 and > 200 prices to test 50/100 baht deposit rule.
+-- =========================================================
+INSERT IGNORE INTO services (id, shop_id, name, price, duration_minutes, description, active) VALUES
+(2001,1201,'ทรีตเมนต์หน้าใส',199.00,45,'ทำความสะอาดและบำรุงผิวหน้า เหมาะสำหรับผู้ต้องการดูแลผิวเบื้องต้น',1),
+(2002,1201,'เลเซอร์หน้าใส',899.00,60,'บริการเลเซอร์ดูแลผิวหน้า พร้อมประเมินก่อนรับบริการ',1),
+(2003,1201,'กดสิวและมาสก์',350.00,60,'ดูแลสิวอุดตันและมาสก์บำรุงหลังทำ',1),
+(2011,1202,'ตัดผมชาย',150.00,30,'ตัดและจัดทรงตามความต้องการ',1),
+(2012,1202,'ตัดผมหญิง',250.00,60,'ตัด ซอย และเซ็ตทรง',1),
+(2013,1202,'ทำสีผม',1290.00,150,'ทำสีผมพร้อมบำรุงหลังทำสี',1),
+(2021,1203,'ทาสีเจลมือ',299.00,60,'ทาสีเจลพร้อมเตรียมหน้าเล็บ',1),
+(2022,1203,'ต่อเล็บเจล',699.00,90,'ต่อเล็บและเลือกทรงได้',1),
+(2023,1203,'ต่อขนตาธรรมชาติ',790.00,90,'ต่อขนตาสไตล์ธรรมชาติ',1),
+(2031,1204,'นวดไทย 60 นาที',300.00,60,'นวดคลายกล้ามเนื้อแบบไทย',1),
+(2032,1204,'นวดน้ำมัน 90 นาที',650.00,90,'นวดน้ำมันอโรม่าเพื่อผ่อนคลาย',1),
+(2033,1204,'สปาเท้า',180.00,45,'แช่เท้าและนวดผ่อนคลาย',1),
+(2041,1205,'มาสก์วิตามินผิว',180.00,40,'มาสก์บำรุงผิวพร้อมวิตามิน',1),
+(2042,1205,'โปรแกรมดูแลรอยสิว',990.00,75,'โปรแกรมดูแลผิวสำหรับรอยสิว',1),
+(2051,1206,'สระไดร์',180.00,40,'สระผมและไดร์จัดทรง',1),
+(2052,1206,'ดัดดิจิตอล',1590.00,180,'ดัดผมพร้อมทรีตเมนต์บำรุง',1),
+(2053,1206,'ยืดผม',1490.00,180,'ยืดผมพร้อมบำรุง',1),
+(2061,1207,'เพ้นท์เล็บ',190.00,45,'เพ้นท์ลายพื้นฐาน เลือกแบบได้',1),
+(2062,1207,'สปามือและเล็บ',390.00,60,'ดูแลมือ เล็บ และบำรุงผิว',1),
+(2063,1207,'ลิฟติ้งขนตา',690.00,75,'ยกขนตาให้งอนธรรมชาติ',1),
+(2071,1208,'นวดคอ บ่า ไหล่',199.00,45,'เน้นผ่อนคลายคอ บ่า และไหล่',1),
+(2072,1208,'นวดอโรม่า 60 นาที',490.00,60,'นวดอโรม่าเพื่อผ่อนคลาย',1),
+(2073,1208,'แพ็กเกจสปา 120 นาที',990.00,120,'นวดและสปาครบชุด 120 นาที',1);
+
+-- =========================================================
+-- SAMPLE BOOKINGS
+-- Dates are around Aug/Sep 2026 so they are convenient for current testing.
+-- =========================================================
+INSERT IGNORE INTO bookings
+(id, customer_id, shop_id, service_id, booking_date, booking_time, note, service_price, deposit_amount, payment_status, booking_status, created_at) VALUES
+(3001,1101,1201,2002,'2026-08-30','11:00:00','ผิวค่อนข้างแพ้ง่าย รบกวนประเมินก่อนทำ',899.00,100.00,'paid','confirmed','2026-08-28 09:10:00'),
+(3002,1102,1202,2011,'2026-08-30','13:00:00','ขอตัดรองทรงต่ำ',150.00,50.00,'paid','confirmed','2026-08-28 10:15:00'),
+(3003,1103,1203,2021,'2026-08-31','15:00:00','อยากได้โทนนู้ด',299.00,100.00,'pending','pending','2026-08-29 08:30:00'),
+(3004,1104,1204,2033,'2026-08-31','16:00:00','ไม่มีข้อมูลเพิ่มเติม',180.00,50.00,'paid','confirmed','2026-08-29 09:00:00'),
+(3005,1105,1205,2042,'2026-09-01','12:00:00','ต้องการปรึกษารอยสิวก่อนเริ่ม',990.00,100.00,'paid','confirmed','2026-08-29 09:20:00'),
+(3006,1101,1206,2051,'2026-09-01','14:00:00','ขอไดร์ตรง',180.00,50.00,'paid','confirmed','2026-08-29 10:00:00'),
+(3007,1102,1207,2063,'2026-09-02','10:30:00','ขอทรงธรรมชาติ',690.00,100.00,'pending','pending','2026-08-29 10:20:00'),
+(3008,1103,1208,2071,'2026-09-02','18:00:00','เน้นช่วงบ่าขวา',199.00,50.00,'paid','confirmed','2026-08-29 10:40:00'),
+-- completed bookings used by reviews below
+(3011,1101,1201,2001,'2026-08-20','11:00:00','ทดลองบริการครั้งแรก',199.00,50.00,'paid','completed','2026-08-18 09:00:00'),
+(3012,1102,1201,2003,'2026-08-21','14:00:00','',350.00,100.00,'paid','completed','2026-08-19 11:00:00'),
+(3013,1103,1202,2012,'2026-08-20','16:00:00','',250.00,100.00,'paid','completed','2026-08-19 15:00:00'),
+(3014,1104,1202,2011,'2026-08-22','10:00:00','',150.00,50.00,'paid','completed','2026-08-20 12:00:00'),
+(3015,1105,1203,2022,'2026-08-22','13:00:00','',699.00,100.00,'paid','completed','2026-08-20 13:30:00'),
+(3016,1101,1203,2023,'2026-08-23','15:00:00','',790.00,100.00,'paid','completed','2026-08-21 09:30:00'),
+(3017,1102,1204,2031,'2026-08-21','17:00:00','',300.00,100.00,'paid','completed','2026-08-20 08:30:00'),
+(3018,1103,1204,2032,'2026-08-24','19:00:00','',650.00,100.00,'paid','completed','2026-08-22 10:30:00'),
+(3019,1104,1205,2041,'2026-08-23','12:00:00','',180.00,50.00,'paid','completed','2026-08-22 11:00:00'),
+(3020,1105,1206,2052,'2026-08-25','11:00:00','',1590.00,100.00,'paid','completed','2026-08-23 11:30:00'),
+(3021,1101,1207,2061,'2026-08-24','14:00:00','',190.00,50.00,'paid','completed','2026-08-23 12:00:00'),
+(3022,1102,1208,2072,'2026-08-25','18:00:00','',490.00,100.00,'paid','completed','2026-08-24 10:00:00'),
+(3023,1103,1208,2073,'2026-08-26','16:00:00','',990.00,100.00,'paid','completed','2026-08-24 15:00:00');
+
+-- =========================================================
+-- SAMPLE REVIEWS - produces different average ratings for Top 5.
+-- =========================================================
+INSERT IGNORE INTO reviews (id, booking_id, customer_id, shop_id, rating, comment, created_at) VALUES
+(4001,3011,1101,1201,5,'บริการดีมาก พนักงานแนะนำละเอียด','2026-08-20 13:00:00'),
+(4002,3012,1102,1201,5,'ร้านสะอาดและตรงเวลา','2026-08-21 16:00:00'),
+(4003,3013,1103,1202,4,'ตัดดี ทรงตรงตามที่ขอ','2026-08-20 18:00:00'),
+(4004,3014,1104,1202,5,'บริการรวดเร็ว','2026-08-22 12:00:00'),
+(4005,3015,1105,1203,5,'เล็บสวยมาก','2026-08-22 16:00:00'),
+(4006,3016,1101,1203,4,'ขนตาดูธรรมชาติ','2026-08-23 18:00:00'),
+(4007,3017,1102,1204,4,'นวดดี บรรยากาศผ่อนคลาย','2026-08-21 19:00:00'),
+(4008,3018,1103,1204,4,'บริการดี','2026-08-24 21:00:00'),
+(4009,3019,1104,1205,5,'พนักงานสุภาพ','2026-08-23 14:00:00'),
+(4010,3020,1105,1206,3,'รอนานเล็กน้อยแต่ผลลัพธ์ดี','2026-08-25 15:00:00'),
+(4011,3021,1101,1207,4,'เพ้นท์ละเอียด','2026-08-24 16:00:00'),
+(4012,3022,1102,1208,5,'นวดดีมาก','2026-08-25 20:00:00'),
+(4013,3023,1103,1208,5,'คุ้มค่าและผ่อนคลาย','2026-08-26 19:00:00');
+
+-- =========================================================
+-- SAMPLE OWNER SUBSCRIPTIONS
+-- =========================================================
+INSERT IGNORE INTO subscriptions (id, owner_id, package, amount, payment_method, payment_status, starts_at, ends_at) VALUES
+(5001,1001,'monthly',259.00,'bank','paid','2026-08-01','2026-09-01'),
+(5002,1002,'half_year',1460.76,'truemoney','paid','2026-08-01','2027-02-01'),
+(5003,1003,'yearly',2735.04,'bank','paid','2026-08-01','2027-08-01'),
+(5004,1004,'monthly',259.00,'truemoney','paid','2026-08-15','2026-09-15'),
+(5005,1005,'half_year',1460.76,'bank','paid','2026-08-10','2027-02-10'),
+(5006,1006,'monthly',259.00,'bank','paid','2026-08-05','2026-09-05'),
+(5007,1007,'yearly',2735.04,'truemoney','paid','2026-08-20','2027-08-20'),
+(5008,1008,'half_year',1460.76,'bank','paid','2026-08-12','2027-02-12');
+
+SET FOREIGN_KEY_CHECKS=1;
+
+-- Quick checks after import
+SELECT 'users' AS table_name, COUNT(*) AS total FROM users
+UNION ALL SELECT 'shops', COUNT(*) FROM shops
+UNION ALL SELECT 'services', COUNT(*) FROM services
+UNION ALL SELECT 'bookings', COUNT(*) FROM bookings
+UNION ALL SELECT 'reviews', COUNT(*) FROM reviews
+UNION ALL SELECT 'subscriptions', COUNT(*) FROM subscriptions;

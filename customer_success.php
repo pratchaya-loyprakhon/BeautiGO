@@ -1,0 +1,1 @@
+<?php require 'includes/header.php';?><main class="wrap"><div class="form card" style="text-align:center"><h2>สมัครเสร็จสิ้นแล้ว</h2><p>กลับหน้าหลักใน <b id="n">5</b> วินาที</p></div></main><script>let n=5;setInterval(()=>{n--;document.getElementById('n').textContent=n;if(n<=0)location='index.php'},1000)</script><?php require 'includes/footer.php';?>
